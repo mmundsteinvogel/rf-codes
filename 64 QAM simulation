@@ -1,0 +1,72 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the 64-QAM constellation points
+def generate_64qam():
+    real_part = np.array([-7, -5, -3, -1, 1, 3, 5, 7])
+    imag_part = np.array([-7, -5, -3, -1, 1, 3, 5, 7])
+    constellation = np.array([complex(i, q) for i in real_part for q in imag_part])
+    # Normalize constellation to scale between 0 and 1
+    norm_constellation = constellation / np.max(np.abs(constellation))
+    return norm_constellation
+
+# Function to randomly generate a large number of 64-QAM symbols
+def modulate_symbols(constellation, num_symbols):
+    # Randomly select symbols from the 64-QAM constellation
+    symbols = np.random.choice(constellation, num_symbols)
+    return symbols
+
+# Function to add noise in both amplitude and phase
+def add_noise(signal, snr_dB):
+    snr_linear = 10 ** (snr_dB / 10)
+    noise_power = np.mean(np.abs(signal)**2) / snr_linear
+    noise = np.sqrt(noise_power / 2) * (np.random.randn(*signal.shape) + 1j * np.random.randn(*signal.shape))
+    noisy_signal = signal + noise
+    return noisy_signal
+
+# Function to add phase noise
+def add_phase_noise(signal, phase_noise_std):
+    phase_noise = np.random.normal(0, phase_noise_std, signal.shape)
+    noisy_signal = signal * np.exp(1j * phase_noise)
+    return noisy_signal
+
+# Function to add amplitude noise
+def add_amplitude_noise(signal, amplitude_noise_std):
+    amplitude_noise = np.random.normal(1, amplitude_noise_std, signal.shape)
+    noisy_signal = signal * amplitude_noise
+    return noisy_signal
+
+# Plot the constellation
+def plot_constellation(constellation, title):
+    plt.figure(figsize=(6,6))
+    plt.plot(np.real(constellation), np.imag(constellation), 'bo', markersize=2)
+    plt.xlim([-1, 1])
+    plt.ylim([-1, 1])
+    plt.title(title)
+    plt.grid(True)
+    plt.xlabel("In-phase")
+    plt.ylabel("Quadrature")
+    plt.show()
+
+# Generate the original 64-QAM constellation
+constellation = generate_64qam()
+
+# Modulate a large number of symbols (more than 64 to induce overlap)
+num_symbols = 10000  # Increase this number to generate more symbols
+symbols = modulate_symbols(constellation, num_symbols)
+plot_constellation(symbols, "Original 64-QAM Constellation with Many Symbols")
+
+# Add noise (combined amplitude and phase noise)
+snr_dB = 20  # SNR in dB
+noisy_symbols = add_noise(symbols, snr_dB)
+plot_constellation(noisy_symbols, f"64-QAM Constellation with {snr_dB} dB Noise and Many Symbols")
+
+# Add phase noise only
+phase_noise_std = 0.1  # Standard deviation of phase noise
+phase_noisy_symbols = add_phase_noise(symbols, phase_noise_std)
+plot_constellation(phase_noisy_symbols, "64-QAM Constellation with Phase Noise and Many Symbols")
+
+# Add amplitude noise only
+amplitude_noise_std = 0.1  # Standard deviation of amplitude noise
+amplitude_noisy_symbols = add_amplitude_noise(symbols, amplitude_noise_std)
+plot_constellation(amplitude_noisy_symbols, "64-QAM Constellation with Amplitude Noise and Many Symbols")

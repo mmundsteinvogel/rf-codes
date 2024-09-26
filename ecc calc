@@ -1,0 +1,51 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Variables for S11 and S22 in dB (you can change these)
+S11_dB = 10  # Reflection coefficient S11 in dB
+S22_dB = 10  # Reflection coefficient S22 in dB
+
+# Convert S11 and S22 from dB to linear magnitude
+S11 = 10 ** (-S11_dB / 20)
+S22 = 10 ** (-S22_dB / 20)
+
+# Isolation values in dB (for smoother curve, use 0.1 dB steps)
+isolation_dB_smooth = np.arange(5, 50.1, 0.1)
+
+# Isolation values for 5 dB steps (for annotations)
+isolation_dB_5steps = np.arange(5, 55, 5)
+
+# Calculate |S12| and |S21| from isolation: |S12| = 10^(-Isolation/20)
+S12_S21_smooth = 10 ** (-isolation_dB_smooth / 20)
+S12_S21_5steps = 10 ** (-isolation_dB_5steps / 20)
+
+# Calculate ECC using the full formula
+numerator_smooth = np.abs(S11 * S12_S21_smooth + S12_S21_smooth * S22) ** 2
+denominator_smooth = (1 - np.abs(S11) ** 2 - np.abs(S12_S21_smooth) ** 2) * (1 - np.abs(S12_S21_smooth) ** 2 - np.abs(S22) ** 2)
+ecc_values_smooth = numerator_smooth / denominator_smooth
+
+# Calculate ECC for 5 dB steps for annotation purposes
+numerator_5steps = np.abs(S11 * S12_S21_5steps + S12_S21_5steps * S22) ** 2
+denominator_5steps = (1 - np.abs(S11) ** 2 - np.abs(S12_S21_5steps) ** 2) * (1 - np.abs(S12_S21_5steps) ** 2 - np.abs(S22) ** 2)
+ecc_values_5steps = numerator_5steps / denominator_5steps
+
+# Plot the results with a smooth curve
+plt.figure(figsize=(8, 6))
+plt.plot(isolation_dB_smooth, ecc_values_smooth, linestyle='-', color='b', label='ECC vs Isolation')
+plt.title(f'Envelope Correlation Coefficient (ECC) vs Isolation with S11 = {S11_dB} dB, S22 = {S22_dB} dB')
+plt.xlabel('Isolation (dB)')
+plt.ylabel('ECC')
+plt.grid(True)
+
+# Highlight ECC values at 5 dB intervals with red dots
+plt.scatter(isolation_dB_5steps, ecc_values_5steps, color='r', zorder=5)  # Red dots at 5 dB steps
+
+# Create a legend block to show ECC values at each 5 dB step
+legend_text = "\n".join([f"Isolation = {iso} dB, ECC = {ecc:.5f}" for iso, ecc in zip(isolation_dB_5steps, ecc_values_5steps)])
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+
+# Place the legend block on the plot
+plt.text(0.95, 0.05, legend_text, transform=plt.gca().transAxes, fontsize=10,
+         verticalalignment='bottom', horizontalalignment='right', bbox=props)
+
+plt.show()

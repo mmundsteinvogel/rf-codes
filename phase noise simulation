@@ -1,0 +1,52 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Parâmetros do sinal
+fs = 1000  # Frequência de amostragem
+T = 1  # Duração do sinal em segundos
+f_sinal = 10  # Frequência da senoide
+t = np.linspace(0, T, fs * T, endpoint=False)  # Vetor de tempo
+A = 1  # Amplitude do sinal
+
+# Gerar o sinal senoidal original
+sinal_original = A * np.sin(2 * np.pi * f_sinal * t)
+
+# Simulação do ruído
+# Ruído na fase (simétrico)
+std_phase_noise = 0.03  # Desvio padrão do ruído de fase
+phase_noise = np.cumsum(np.random.normal(0, std_phase_noise, len(t)))  # Ruído cumulativo simétrico na fase
+
+# Ruído na amplitude (simétrico)
+std_amplitude_noise = 0.03  # Desvio padrão do ruído de amplitude
+amplitude_noise = 1 + np.random.normal(0, std_amplitude_noise, len(t))  # Ruído simétrico na amplitude
+
+# Sinal com ruído
+sinal_ruido = amplitude_noise * A * np.sin(2 * np.pi * f_sinal * t + phase_noise)
+
+# Plotar no domínio do tempo
+plt.figure(figsize=(12, 6))
+plt.subplot(2, 1, 1)
+plt.plot(t, sinal_original, label='Sinal Original')
+plt.plot(t, sinal_ruido, label='Sinal com Ruído', alpha=0.7)
+plt.title('Domínio do Tempo')
+plt.xlabel('Tempo (s)')
+plt.ylabel('Amplitude')
+plt.legend()
+
+# Transformada de Fourier para o domínio da frequência
+freqs = np.fft.fftfreq(len(t), 1/fs)
+sinal_original_fft = np.fft.fft(sinal_original)
+sinal_ruido_fft = np.fft.fft(sinal_ruido)
+
+# Plotar no domínio da frequência (com zoom)
+plt.subplot(2, 1, 2)
+plt.plot(freqs[:len(freqs)//2], np.abs(sinal_original_fft[:len(freqs)//2]), label='Sinal Original')
+plt.plot(freqs[:len(freqs)//2], np.abs(sinal_ruido_fft[:len(freqs)//2]), label='Sinal com Ruído', alpha=0.7)
+plt.title('Domínio da Frequência (Zoom)')
+plt.xlabel('Frequência (Hz)')
+plt.ylabel('Magnitude')
+plt.xlim(0, 50)  # Zoom na faixa de 0 a 50 Hz
+plt.legend()
+
+plt.tight_layout()
+plt.show()

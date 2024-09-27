@@ -1,0 +1,55 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def generate_qam_constellation(M):
+    # Generate M-QAM constellation points
+    m_sqrt = int(np.sqrt(M))
+    re = np.repeat(np.arange(-m_sqrt+1, m_sqrt, 2), m_sqrt)
+    im = np.tile(np.arange(-m_sqrt+1, m_sqrt, 2), m_sqrt)
+    constellation = re + 1j * im
+    return constellation / np.sqrt((np.abs(constellation)**2).mean())  # Normalization
+
+def modulate_qam_symbols(M, num_symbols):
+    # Generate random symbols and map to the QAM constellation
+    constellation = generate_qam_constellation(M)
+    symbol_indices = np.random.randint(0, M, num_symbols)
+    return constellation[symbol_indices]
+
+def add_noise(signal, snr_db):
+    # Add AWGN noise to the signal
+    snr_linear = 10**(snr_db / 10)
+    signal_power = np.mean(np.abs(signal)**2)
+    noise_power = signal_power / snr_linear
+    noise = np.sqrt(noise_power / 2) * (np.random.randn(len(signal)) + 1j * np.random.randn(len(signal)))
+    return signal + noise
+
+def plot_constellation(constellation, title):
+    plt.figure(figsize=(6, 6))
+    plt.scatter(np.real(constellation), np.imag(constellation), color='blue', s=10)
+    plt.grid(True)
+    plt.title(title)
+    plt.xlabel('In-phase')
+    plt.ylabel('Quadrature')
+    plt.xlim([-2, 2])
+    plt.ylim([-2, 2])
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.show()
+
+# Parameters
+snr_db = 30  # SNR in dB
+num_symbols = 50000  # Number of symbols to generate
+
+# Generate and modulate 256-QAM and 4k-QAM signals
+M_256 = 256
+M_4k = 4096
+
+symbols_256 = modulate_qam_symbols(M_256, num_symbols)
+symbols_4k = modulate_qam_symbols(M_4k, num_symbols)
+
+# Add noise to the signals
+noisy_symbols_256 = add_noise(symbols_256, snr_db)
+noisy_symbols_4k = add_noise(symbols_4k, snr_db)
+
+# Plot constellations
+plot_constellation(noisy_symbols_256, f'256-QAM Constellation (SNR={snr_db} dB)')
+plot_constellation(noisy_symbols_4k, f'4k-QAM Constellation (SNR={snr_db} dB)')

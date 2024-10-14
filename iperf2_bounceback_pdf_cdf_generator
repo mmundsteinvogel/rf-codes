@@ -1,0 +1,90 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.stats import gaussian_kde
+
+def parse_input(input_str):
+    x_values = []
+    data = input_str.split(',')
+    for pair in data:
+        x, y = pair.split(':')
+        x_values.extend([float(x) * 0.1] * int(y))  # Multiply x by 0.1 and extend by y count
+    return x_values
+
+def plot_histogram_and_cdf(named_input_strings):
+    all_x_values = []
+    max_x_value = 0
+    names = []
+
+    for name, input_str in named_input_strings:
+        x_values = parse_input(input_str)
+        all_x_values.append(x_values)
+        max_x_value = max(max_x_value, max(x_values))
+        names.append(name)
+
+    # Determine the range for the x-axis
+    x_ticks = np.arange(0, max_x_value + 20, 20)  # Fixed 20 ms intervals
+
+    # Plot the histogram as smoothed areas
+    plt.figure(figsize=(12, 8))
+
+    # Subplot for Histogram (Normalized to percentage)
+    plt.subplot(2, 1, 1)
+    
+    for i, x_values in enumerate(all_x_values):
+        kde = gaussian_kde(x_values, bw_method=0.1)  # Adjust bw_method for less smoothing
+        x_kde = np.linspace(min(x_values), max(x_values), 2000)  # Increase the number of samples
+        y_kde = kde(x_kde)
+        # Normalize the density to sum to 100% (convert to percentage)
+        y_kde_normalized = y_kde * 100 / np.sum(y_kde)
+        plt.fill_between(x_kde, y_kde_normalized, alpha=0.5, label=names[i])
+    
+    plt.xlabel('RTT in ms')
+    plt.ylabel('Density (%)')
+    plt.title('Smoothed Histogram (Area Plot, Normalized to Percentage)')
+    plt.xticks(x_ticks)
+    plt.legend()
+
+    # Subplot for CDF (Normalized to percentage)
+    plt.subplot(2, 1, 2)
+
+    for i, x_values in enumerate(all_x_values):
+        cumulative_y_values = np.cumsum(np.histogram(x_values, bins=2000, range=(0, max_x_value))[0]) / len(x_values)
+        x_values_cdf = np.linspace(0, max_x_value, 2000)
+        plt.plot(x_values_cdf, cumulative_y_values * 100, marker='', linestyle='-', label=names[i])
+
+        # Highlight the percentiles for the current input
+        percentile_5_value = round(np.percentile(x_values, 5), 2)
+        percentile_95_value = round(np.percentile(x_values, 95), 2)
+        percentile_997_value = round(np.percentile(x_values, 99.7), 2)
+
+        plt.axvline(x=percentile_5_value, color='g', linestyle='--', label=f'{names[i]} - 5th Percentile ({percentile_5_value} ms)')
+        plt.axvline(x=percentile_95_value, color='b', linestyle='--', label=f'{names[i]} - 95th Percentile ({percentile_95_value} ms)')
+        plt.axvline(x=percentile_997_value, color='r', linestyle='--', label=f'{names[i]} - 99.7th Percentile ({percentile_997_value} ms)')
+
+    plt.xlabel('RTT in ms')
+    plt.ylabel('Cumulative Probability (%)')
+    plt.title('Cumulative Distribution Function (CDF, Normalized to Percentage)')
+    plt.xticks(x_ticks)
+    plt.legend()
+
+    # Adjust layout and show the plot
+    plt.tight_layout()
+    plt.show()
+
+def main():
+    named_input_strings = []
+
+    while True:
+        user_name = input("Enter a name for this input (or type 'done' to finish): ")
+        if user_name.lower() == 'done':
+            break
+        user_input = input(f"Enter input string for {user_name}: ")
+        named_input_strings.append((user_name, user_input))
+
+    if named_input_strings:
+        plot_histogram_and_cdf(named_input_strings)
+    else:
+        print("No input strings provided.")
+
+if __name__ == "__main__":
+    main()
